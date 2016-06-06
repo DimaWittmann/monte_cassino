@@ -3,19 +3,19 @@
 #include <linux/kernel.h>
 
 #include <linux/kthread.h>
-#include <linux/semaphore.h>
+#include <linux/completion.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Dmytrii Wittmann");
-MODULE_DESCRIPTION("Semaphore sinchronization example");
+MODULE_DESCRIPTION("Completion sinchronization example");
 MODULE_VERSION("0.1");
 
 
 static struct {
-	// signals that array is inialized
-	struct semaphore sema_data_ready; 
-	// signals how many threads finished its work
-	struct semaphore sema_threads_finished; 
+	struct completion init_data_comp;
+	struct completion init_thread_comp;
+	struct completion mult_2_thread_comp;
+	struct completion mult_3_thread_comp; 
 
 	int array[10];
 } g;
@@ -27,9 +27,8 @@ static int init_data_thread_fn(void* arg)
 		g.array[i] = i;
 	}
 
-	up(&g.sema_data_ready);
-	up(&g.sema_data_ready);
-	up(&g.sema_threads_finished);
+	complete_all(&g.init_data_comp);
+	complete(&g.init_thread_comp);
 	return 0;
 }
 
@@ -37,10 +36,10 @@ static int init_data_thread_fn(void* arg)
 static int multiply_data_thread_fn(int koef)
 {
 	int larr[sizeof(g.array)];
-
-	down(&g.sema_data_ready);
-
 	int i;
+		
+	wait_for_completion(&g.init_data_comp);
+
 	for(i = 0; i < sizeof(g.array); i++) {
 		larr[i] = g.array[i] * koef;
 	}
@@ -49,7 +48,7 @@ static int multiply_data_thread_fn(int koef)
 		larr[0], larr[1], larr[2], larr[3], larr[4], larr[5], larr[6], 
 		larr[7], larr[8], larr[9]);
 
-	up(&g.sema_threads_finished);
+	complete((koef == 2) ? &g.mult_2_thread_comp : &g.mult_3_thread_comp);
 	return 0;
 }
 
@@ -58,8 +57,10 @@ static int __init init(void)
 {
 	printk(KERN_INFO "init " __FILE__"\n");
 
-	sema_init(&g.sema_threads_finished, 0);
-	sema_init(&g.sema_data_ready, 0);
+	init_completion(&g.init_data_comp);
+	init_completion(&g.init_thread_comp);
+	init_completion(&g.mult_2_thread_comp);
+	init_completion(&g.mult_3_thread_comp);
 
 	struct task_struct* init_thread = kthread_create(init_data_thread_fn,
 							NULL, "KThread 1");
@@ -101,9 +102,9 @@ static void __exit exit(void)
 {
 	printk(KERN_INFO "exit " __FILE__ "\n");
 
-	down(&g.sema_threads_finished);
-	down(&g.sema_threads_finished);
-	down(&g.sema_threads_finished);
+	wait_for_completion(&g.init_thread_comp);
+	wait_for_completion(&g.mult_2_thread_comp);
+	wait_for_completion(&g.mult_3_thread_comp);
 }
 
 module_init(init);
