@@ -28,8 +28,7 @@ static int init_data_thread_fn(void* arg)
 	}
 
 	complete_all(&g.init_data_comp);
-	complete(&g.init_thread_comp);
-	return 0;
+	complete_and_exit(&g.init_thread_comp, 0);
 }
 
 
@@ -48,8 +47,7 @@ static int multiply_data_thread_fn(int koef)
 		larr[0], larr[1], larr[2], larr[3], larr[4], larr[5], larr[6], 
 		larr[7], larr[8], larr[9]);
 
-	complete((koef == 2) ? &g.mult_2_thread_comp : &g.mult_3_thread_comp);
-	return 0;
+	complete_and_exit((koef == 2) ? &g.mult_2_thread_comp : &g.mult_3_thread_comp, 0);
 }
 
 

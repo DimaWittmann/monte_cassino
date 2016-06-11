@@ -41,7 +41,7 @@ static int thread_fn(long arg)
 			g.thread_stat[number].number, g.thread_stat[number].pid,
 			g.thread_stat[number].jiffies);
 
-		complete(&g.thread_complete[number]);
+		complete_and_exit(&g.thread_complete[number], 0);
 	}
 
 	return 0;
