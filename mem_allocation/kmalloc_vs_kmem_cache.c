@@ -24,10 +24,18 @@ static int __init init(void)
 	/* kmalloc */
 	for (i = 0; i < ALLOC_N; i++) {
 		kmalloc_m[i] = kmalloc(ALLOC_SIZE, GFP_KERNEL);
+
+		void *k1, *k2;
+		k1 = kmalloc(ALLOC_SIZE, GFP_KERNEL);
+		k2 = kmalloc(ALLOC_SIZE, GFP_KERNEL);
+		printk(KERN_INFO "kmalloc difference %d\n", k2 - k1);
+		kfree(k1);
+		kfree(k2);
+
 	} 
 
-	printk(KERN_INFO "kmalloc allocated blocks differens %d %d %d\n", 
-		kmalloc_m[1] - kmalloc_m[0], kmalloc_m[2] - kmalloc_m[1], 
+	printk(KERN_INFO "kmalloc allocated blocks difference %d %d %d\n",
+		kmalloc_m[1] - kmalloc_m[0], kmalloc_m[2] - kmalloc_m[1],
 		kmalloc_m[3] - kmalloc_m[2]);
 
 	for (i = 0; i < ALLOC_N; i++) {
@@ -43,9 +51,16 @@ static int __init init(void)
 
 	for (i = 0; i < ALLOC_N; i++) {
 		cache_m[i] = kmem_cache_alloc(cache, GFP_KERNEL);
+
+		void *c1, *c2;
+		c1 = kmem_cache_alloc(cache, GFP_KERNEL);
+		c2 = kmem_cache_alloc(cache, GFP_KERNEL);
+		printk(KERN_INFO "kmem_cache_alloc difference %d\n", c2 - c1);
+		kmem_cache_free(cache, c1);
+		kmem_cache_free(cache, c2);
 	}
 
-	printk(KERN_INFO "kmem_cache allocated blocks differens %d %d %d\n", 
+	printk(KERN_INFO "kmem_cache allocated blocks difference %d %d %d\n", 
 		cache_m[1] - cache_m[0], cache_m[2] - cache_m[1], 
 		cache_m[3] - cache_m[2]);
 
